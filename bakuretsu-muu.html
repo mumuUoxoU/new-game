@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>むぅのばくれつスライム | new-game</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; }
+  body {
+    font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
+    background:linear-gradient(180deg,#1b1035 0%,#3b2a6d 55%,#6a4fa3 100%);
+    color:#fff; display:flex; flex-direction:column; align-items:center;
+    overflow:hidden; touch-action:none; -webkit-user-select:none; user-select:none;
+  }
+  h1 { font-size:20px; margin:10px 0 2px; letter-spacing:.05em; }
+  h1 .heart { color:#e9b8ff; }
+  #hud {
+    display:flex; gap:16px; font-size:16px; margin:4px 0 8px;
+    background:rgba(255,255,255,.12); padding:6px 16px; border-radius:999px;
+  }
+  #stage { position:relative; width:min(94vw,420px); }
+  canvas {
+    width:100%; display:block; border-radius:16px;
+    background:linear-gradient(180deg,#241447 0%,#4a3585 70%,#7a5fb5 100%);
+    box-shadow:0 8px 30px rgba(0,0,0,.45);
+  }
+  .overlay {
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:12px; text-align:center;
+    background:rgba(20,10,45,.55); border-radius:16px; padding:16px;
+  }
+  .overlay.hidden { display:none; }
+  .overlay .big { font-size:52px; }
+  .overlay p { font-size:14px; line-height:1.7; }
+  button {
+    font-family:inherit; font-size:17px; font-weight:bold; cursor:pointer;
+    color:#3b2a6d; background:linear-gradient(180deg,#f3d9ff,#d9a7ff);
+    border:none; border-radius:999px; padding:10px 28px;
+    box-shadow:0 4px 0 #9a6bc7; transition:transform .05s;
+  }
+  button:active { transform:translateY(3px); box-shadow:0 1px 0 #9a6bc7; }
+  #finalScore { font-size:22px; font-weight:bold; color:#ffe9a8; }
+  #mashCount { font-size:30px; font-weight:bold; color:#ffe9a8; }
+  #downTimer { font-size:20px; font-weight:bold; color:#ff9fd6; }
+  .hint { font-size:12px; opacity:.85; margin-top:8px; }
+</style>
+</head>
+<body>
+<h1>むぅのばくれつスライム <span class="heart">💜</span></h1>
+<div id="hud">
+  <span>⭐ <span id="score">0</span></span>
+  <span>🏆 <span id="best">0</span></span>
+  <span>💗 <span id="hearts">0</span></span>
+</div>
+<div id="stage">
+  <canvas id="game" width="420" height="520"></canvas>
+  <div class="overlay" id="startScreen">
+    <div class="big">🐱💥</div>
+    <p>落ちてくるスライムに星をぶつけて爆裂させよう！<br>
+    はじけた星が別のスライムに当たると<b>連鎖</b>で点数が倍々に！<br>
+    スライムや星に当たるとダウン…連打で復活してね。<br>
+    💗を取ると復活が楽になるよ。</p>
+    <button id="startBtn">スタート！</button>
+    <p class="hint">スマホ：ドラッグで移動、タップ長押しで星を発射<br>PC：←→キーで移動、スペースで発射</p>
+  </div>
+  <div class="overlay hidden" id="downScreen">
+    <div class="big">😵💫</div>
+    <p>ダウンしちゃった！<br>ボタンを連打して復活してね！</p>
+    <div id="mashCount">あと 5 回</div>
+    <div id="downTimer">3.0</div>
+    <p class="hint">画面タップ or スペース連打！</p>
+  </div>
+  <div class="overlay hidden" id="overScreen">
+    <div class="big">🌙</div>
+    <div id="finalScore">0点</div>
+    <p id="overMsg">おつかれさま！</p>
+    <button id="retryBtn">もういちど</button>
+  </div>
+</div>
+<p class="hint">マリオRPGの「爆裂カブトムシ」をむぅ風にアレンジしたよ 🎮</p>
+<script>
+(() => {
+  const cv = document.getElementById('game');
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+  const scoreEl = document.getElementById('score');
+  const bestEl = document.getElementById('best');
+  const heartsEl = document.getElementById('hearts');
+  const startScreen = document.getElementById('startScreen');
+  const downScreen = document.getElementById('downScreen');
+  const overScreen = document.getElementById('overScreen');
+  const mashCountEl = document.getElementById('mashCount');
+  const downTimerEl = document.getElementById('downTimer');
+  const finalScoreEl = document.getElementById('finalScore');
+  const overMsgEl = document.getElementById('overMsg');
+
+  let best = +(localStorage.getItem('muu-bakuretsu-best') || 0);
+  bestEl.textContent = best;
+
+  const bgStars = Array.from({length: 70}, () => ({
+    x: Math.random()*W, y: Math.random()*H,
+    r: Math.random()*1.6 + .4, p: Math.random()*Math.PI*2
+  }));
+  const SLIME_COLORS = ['#b18cff','#ff9fd6','#8fe3c0','#9fc4ff','#ffd28f'];
+
+  let state = 'ready'; // ready | play | down | over
+  let raf = 0, last = 0, elapsed = 0;
+  let score = 0, heartsCollected = 0, totalDowns = 0;
+  let playerX = W/2;
+  const playerY = H - 56, playerR = 22;
+  let invUntil = 0;
+  let slimes = [], shots = [], scatters = [], drops = [], floats = [];
+  let spawnTimer = 0, fireTimer = 0, pointerHeld = false;
+  let downTimeLeft = 0, mashLeft = 0;
+  const keys = {};
+
+  function reset() {
+    score = 0; heartsCollected = 0; totalDowns = 0; elapsed = 0;
+    slimes = []; shots = []; scatters = []; drops = []; floats = [];
+    spawnTimer = .5; fireTimer = 0; playerX = W/2; invUntil = 0;
+    updateHud();
+  }
+  function updateHud() {
+    scoreEl.textContent = score;
+    heartsEl.textContent = heartsCollected;
+  }
+  function addFloat(x, y, text, size) {
+    floats.push({x, y, text, life: 1, size: size || 16});
+  }
+  function spawnSlime() {
+    slimes.push({
+      x: 26 + Math.random() * (W - 52),
+      y: -24,
+      vy: 55 + Math.min(70, elapsed * 1.1) + Math.random() * 35,
+      sway: Math.random() * Math.PI * 2,
+      r: 17 + Math.random() * 4,
+      color: SLIME_COLORS[(Math.random() * SLIME_COLORS.length) | 0]
+    });
+  }
+  function burst(s, gen) {
+    const pts = Math.min(9999, Math.pow(2, gen + 1));
+    score += pts; updateHud();
+    addFloat(s.x, s.y, '+' + pts, gen >= 4 ? 26 : gen >= 2 ? 20 : 15);
+    const n = 5;
+    for (let i = 0; i < n; i++) {
+      const ang = (-160 + Math.random() * 140) * Math.PI / 180;
+      const sp = 140 + Math.random() * 130;
+      scatters.push({x: s.x, y: s.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, gen: gen + 1});
+    }
+    if (gen >= 2 && Math.random() < .3) {
+      drops.push({x: s.x, y: s.y, vy: 100});
+    }
+  }
+  function shoot() {
+    shots.push({x: playerX, y: playerY - 28, vy: -540});
+  }
+  function goDown() {
+    state = 'down';
+    totalDowns++;
+    mashLeft = Math.max(5, 4 + totalDowns - heartsCollected);
+    downTimeLeft = 3.0;
+    mashCountEl.textContent = 'あと ' + mashLeft + ' 回';
+    downTimerEl.textContent = downTimeLeft.toFixed(1);
+    downScreen.classList.remove('hidden');
+    pointerHeld = false;
+  }
+  function revive() {
+    state = 'play';
+    downScreen.classList.add('hidden');
+    invUntil = elapsed + 2.5;
+    slimes = slimes.filter(s => Math.hypot(s.x - playerX, s.y - playerY) > 100);
+    addFloat(playerX, playerY - 44, 'ふっかつ！✨', 18);
+  }
+  function mash() {
+    if (state !== 'down') return;
+    mashLeft--;
+    mashCountEl.textContent = 'あと ' + Math.max(0, mashLeft) + ' 回';
+    if (mashLeft <= 0) revive();
+  }
+  function gameOver() {
+    state = 'over';
+    downScreen.classList.add('hidden');
+    if (score > best) {
+      best = score;
+      localStorage.setItem('muu-bakuretsu-best', best);
+      bestEl.textContent = best;
+      overMsgEl.textContent = '新記録だよ！すごい！🎉';
+    } else {
+      overMsgEl.textContent = 'おつかれさま！また遊ぼうね💜';
+    }
+    finalScoreEl.textContent = score + '点';
+    overScreen.classList.remove('hidden');
+  }
+
+  function drawSlime(s) {
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.ellipse(s.x, s.y + 4, s.r, s.r * .82, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.beginPath();
+    ctx.ellipse(s.x - s.r * .35, s.y - s.r * .25, s.r * .28, s.r * .16, -.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#2b2140';
+    ctx.beginPath();
+    ctx.arc(s.x - s.r * .32, s.y, 2.6, 0, 7);
+    ctx.arc(s.x + s.r * .32, s.y, 2.6, 0, 7);
+    ctx.fill();
+    ctx.strokeStyle = '#2b2140'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(s.x, s.y + 3, 4, .15 * Math.PI, .85 * Math.PI); ctx.stroke();
+  }
+
+  function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+    for (const s of bgStars) {
+      ctx.globalAlpha = .35 + .65 * Math.abs(Math.sin(t / 700 + s.p));
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(255,255,255,.10)';
+    ctx.fillRect(0, H - 26, W, 26);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const s of slimes) drawSlime(s);
+    for (const d of drops) { ctx.font = '24px serif'; ctx.fillText('💗', d.x, d.y); }
+    for (const sh of shots) { ctx.font = '22px serif'; ctx.fillText('⭐', sh.x, sh.y); }
+    for (const sc of scatters) { ctx.font = '16px serif'; ctx.fillText('⭐', sc.x, sc.y); }
+    // むぅ（プレイヤー）
+    const inv = elapsed < invUntil;
+    if (!inv || Math.floor(t / 120) % 2 === 0) {
+      ctx.font = '44px serif';
+      ctx.fillText(state === 'down' ? '😵' : '🐱', playerX, playerY);
+      ctx.font = '18px serif';
+      ctx.fillText('💜', playerX, playerY - 30);
+    }
+    for (const f of floats) {
+      ctx.globalAlpha = Math.max(0, f.life);
+      ctx.fillStyle = '#ffe9a8';
+      ctx.font = 'bold ' + f.size + 'px sans-serif';
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function step(ts) {
+    raf = requestAnimationFrame(step);
+    const dt = Math.min(.05, (ts - last) / 1000 || 0);
+    last = ts;
+
+    if (state === 'down') {
+      downTimeLeft -= dt;
+      downTimerEl.textContent = Math.max(0, downTimeLeft).toFixed(1);
+      if (downTimeLeft <= 0) gameOver();
+      draw(ts);
+      return;
+    }
+    if (state !== 'play') { draw(ts); return; }
+    elapsed += dt;
+
+    if (keys['ArrowLeft'])  playerX -= 330 * dt;
+    if (keys['ArrowRight']) playerX += 330 * dt;
+    playerX = Math.max(26, Math.min(W - 26, playerX));
+
+    if (pointerHeld) {
+      fireTimer -= dt;
+      if (fireTimer <= 0) { shoot(); fireTimer = .2; }
+    }
+
+    spawnTimer -= dt;
+    const interval = Math.max(.42, .95 - elapsed * .008);
+    if (spawnTimer <= 0 && slimes.length < 26) { spawnSlime(); spawnTimer = interval; }
+
+    // スライム落下
+    const aliveSlimes = [];
+    for (const s of slimes) {
+      s.y += s.vy * dt;
+      s.sway += dt * 2;
+      s.x += Math.sin(s.sway) * .35;
+      if (s.y < H - 24) aliveSlimes.push(s);
+    }
+    slimes = aliveSlimes;
+
+    // 自分の星
+    const aliveShots = [];
+    for (const sh of shots) {
+      sh.y += sh.vy * dt;
+      if (sh.y > -20) aliveShots.push(sh);
+    }
+    shots = aliveShots;
+
+    // 星×スライム判定（自分の星 gen=0）
+    const hitSlimes = new Set(), usedShots = new Set();
+    shots.forEach((sh, i) => {
+      slimes.forEach((s, j) => {
+        if (hitSlimes.has(j) || usedShots.has(i)) return;
+        if (Math.hypot(sh.x - s.x, sh.y - s.y) < s.r + 11) {
+          hitSlimes.add(j); usedShots.add(i); burst(s, 0);
+        }
+      });
+    });
+    shots = shots.filter((_, i) => !usedShots.has(i));
+    slimes = slimes.filter((_, j) => !hitSlimes.has(j));
+
+    // 飛び散った星
+    const aliveSc = [];
+    for (const sc of scatters) {
+      sc.vy += 260 * dt;
+      sc.x += sc.vx * dt;
+      sc.y += sc.vy * dt;
+      let consumed = false;
+      for (let j = 0; j < slimes.length; j++) {
+        const s = slimes[j];
+        if (Math.hypot(sc.x - s.x, sc.y - s.y) < s.r + 9) {
+          burst(s, sc.gen);
+          slimes.splice(j, 1);
+          consumed = true;
+          break;
+        }
+      }
+      if (consumed) continue;
+      // プレイヤーに当たるとダウン
+      if (elapsed >= invUntil && Math.hypot(sc.x - playerX, sc.y - playerY) < playerR + 8) {
+        goDown(); draw(ts); return;
+      }
+      if (sc.y < H - 22 && sc.x > -16 && sc.x < W + 16 && sc.y > -30) aliveSc.push(sc);
+    }
+    scatters = aliveSc;
+
+    // スライム×プレイヤー
+    if (elapsed >= invUntil) {
+      for (const s of slimes) {
+        if (Math.hypot(s.x - playerX, s.y - playerY) < s.r + playerR - 4) {
+          goDown(); draw(ts); return;
+        }
+      }
+    }
+
+    // ハート
+    const aliveDrops = [];
+    for (const d of drops) {
+      d.y += d.vy * dt;
+      if (Math.abs(d.x - playerX) < 34 && Math.abs(d.y - playerY) < 34) {
+        heartsCollected++; updateHud();
+        addFloat(playerX, playerY - 44, '💗 ゲット！', 17);
+        continue;
+      }
+      if (d.y < H - 20) aliveDrops.push(d);
+    }
+    drops = aliveDrops;
+
+    // 浮き文字
+    for (const f of floats) { f.y -= 34 * dt; f.life -= dt * .9; }
+    floats = floats.filter(f => f.life > 0);
+
+    draw(ts);
+  }
+
+  function start() {
+    reset();
+    startScreen.classList.add('hidden');
+    overScreen.classList.add('hidden');
+    downScreen.classList.add('hidden');
+    state = 'play';
+    last = performance.now();
+  }
+
+  function pointX(e) {
+    const r = cv.getBoundingClientRect();
+    return (e.clientX - r.left) * (W / r.width);
+  }
+  cv.addEventListener('pointerdown', e => {
+    if (state === 'play') {
+      playerX = pointX(e);
+      pointerHeld = true;
+      shoot(); fireTimer = .2;
+    }
+  });
+  window.addEventListener('pointermove', e => {
+    if (pointerHeld && state === 'play') playerX = pointX(e);
+  });
+  window.addEventListener('pointerup', () => pointerHeld = false);
+  downScreen.addEventListener('pointerdown', () => mash());
+  window.addEventListener('keydown', e => {
+    keys[e.key] = true;
+    if (state === 'down' && (e.key === ' ' || e.key === 'a' || e.key === 'b' || e.key === 'y')) { mash(); e.preventDefault(); }
+    else if (state === 'play' && e.key === ' ' && !e.repeat) { shoot(); e.preventDefault(); }
+  });
+  window.addEventListener('keyup', e => keys[e.key] = false);
+
+  document.getElementById('startBtn').addEventListener('click', start);
+  document.getElementById('retryBtn').addEventListener('click', start);
+
+  last = performance.now();
+  raf = requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>
