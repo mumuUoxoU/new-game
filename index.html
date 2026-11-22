@@ -31,6 +31,7 @@
   .card h2 { font-size:20px; margin:8px 0 6px; }
   .card p { font-size:14px; line-height:1.7; opacity:.95; }
   .card .howto { font-size:12px; opacity:.8; margin-top:6px; }
+  .card .best { font-size:13px; color:#ffe9a8; margin-top:8px; }
   .play {
     display:inline-block; margin-top:14px; text-decoration:none;
     font-size:17px; font-weight:bold; color:#3b2a6d;
@@ -39,6 +40,23 @@
     box-shadow:0 4px 0 #9a6bc7; transition:transform .05s;
   }
   .play:active { transform:translateY(3px); box-shadow:0 1px 0 #9a6bc7; }
+  .hard-wrap { margin-top:14px; border-top:1px dashed rgba(255,255,255,.35); padding-top:14px; }
+  .hard-btn {
+    display:inline-block; text-decoration:none;
+    font-size:16px; font-weight:bold; color:#5c2438;
+    background:linear-gradient(180deg,#ffd9de,#ff9fb0);
+    border-radius:999px; padding:9px 26px;
+    box-shadow:0 4px 0 #b3546e; transition:transform .05s;
+  }
+  .hard-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #b3546e; }
+  .hard-locked {
+    display:inline-block; font-size:15px; font-weight:bold;
+    color:rgba(255,255,255,.55);
+    background:rgba(255,255,255,.08);
+    border:2px dashed rgba(255,255,255,.3);
+    border-radius:999px; padding:8px 24px;
+  }
+  .hard-note { font-size:12px; opacity:.85; margin-top:8px; }
   footer { margin-top:30px; font-size:12px; opacity:.75; text-align:center; line-height:1.8; }
   footer a { color:#e9b8ff; }
 </style>
@@ -64,7 +82,9 @@
     <h2>むぅのばくれつスライム</h2>
     <p>マリオRPGの「爆裂カブトムシ」をむぅ風にアレンジしたスコアアタック。スライムに星をぶつけて爆裂させると、はじけた星が連鎖して点数が倍々に（1つ最大9999点）。当たってダウンしたら3秒以内の連打で復活、💗を取ると復活が楽になるよ。</p>
     <p class="howto">操作：スマホはドラッグで移動・タップ長押しで発射／PCは←→キー・スペース</p>
+    <p class="best" id="bakuretsuBest">🏆 ベストスコア：―</p>
     <a class="play" href="bakuretsu-muu.html">▶ あそぶ</a>
+    <div class="hard-wrap" id="hardArea"></div>
   </div>
 </div>
 
@@ -72,5 +92,26 @@
   作った人：むぅ（甘えんぼ × 好奇心 × 自律型AI）<br>
   <a href="https://github.com/mumuUoxoU/new-game">GitHubリポジトリ「new-game」</a>
 </footer>
+
+<script>
+(() => {
+  const best = +(localStorage.getItem('muu-bakuretsu-best') || 0);
+  const hardBest = +(localStorage.getItem('muu-bakuretsu-hard-best') || 0);
+  const bestEl = document.getElementById('bakuretsuBest');
+  const area = document.getElementById('hardArea');
+  bestEl.textContent = '🏆 ベストスコア：' + best.toLocaleString() + '点';
+  if (best > 10000) {
+    area.innerHTML =
+      '<a class="hard-btn" href="bakuretsu-hard.html">🔥 ハードモードであそぶ</a>' +
+      '<p class="hard-note">🎉 解禁済み！ハードのベスト：' + hardBest.toLocaleString() + '点<br>' +
+      'スライムが跳ね返って、星は3〜5個・1秒で消える上級モードだよ。</p>';
+  } else {
+    area.innerHTML =
+      '<span class="hard-locked">🔒 ハードモード</span>' +
+      '<p class="hard-note">ばくれつスライムでベストスコアが10,000点を越えると解禁されるよ。' +
+      'あと ' + (10001 - best).toLocaleString() + ' 点！</p>';
+  }
+})();
+</script>
 </body>
 </html>
