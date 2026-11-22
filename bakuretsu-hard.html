@@ -144,11 +144,11 @@
     const pts = Math.min(9999, Math.pow(2, gen + 1));
     score += pts; updateHud();
     addFloat(s.x, s.y, '+' + pts, gen >= 4 ? 24 : gen >= 2 ? 19 : 14);
-    const n = 3 + ((Math.random() * 3) | 0); // 星は3〜5個
+    const n = 5; // 星は5個
     for (let i = 0; i < n; i++) {
       const ang = (-160 + Math.random() * 140) * Math.PI / 180;
       const sp = 130 + Math.random() * 130;
-      scatters.push({x: s.x, y: s.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, gen: gen + 1, t: 0});
+      scatters.push({x: s.x, y: s.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, gen: gen + 1});
     }
     if (gen >= 2 && Math.random() < .3) {
       drops.push({x: s.x, y: s.y, vy: 100});
@@ -321,7 +321,6 @@
     // 飛び散った星
     const aliveSc = [];
     for (const sc of scatters) {
-      sc.t += dt; // 飛び散った星は1秒で消える
       sc.vy += 260 * dt;
       sc.x += sc.vx * dt;
       sc.y += sc.vy * dt;
@@ -340,7 +339,7 @@
       if (elapsed >= invUntil && Math.hypot(sc.x - playerX, sc.y - playerY) < playerR + 7) {
         goDown(); draw(ts); return;
       }
-      if (sc.t < 1 && sc.y < GROUND - 4 && sc.x > -16 && sc.x < W + 16 && sc.y > -30) aliveSc.push(sc);
+      if (sc.y < GROUND - 4 && sc.x > -16 && sc.x < W + 16 && sc.y > -30) aliveSc.push(sc);
     }
     scatters = aliveSc;
 
