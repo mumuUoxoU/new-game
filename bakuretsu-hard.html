@@ -58,8 +58,8 @@
   <div class="overlay" id="startScreen">
     <div class="big">🐱🔥</div>
     <p>ハードモードだよ！<br>
-    スライムが壁と床で<b>跳ね返って</b>ずっと動き回るよ。<br>
-    はじける星は3〜5個、消えるまで1秒だけ。<br>
+    スライムが壁と床で<b>跳ね返って</b>、横に速く動き回るよ。<br>
+    はじける星は5個、消えずに飛び回るよ。<br>
     みんな少し小さめだから、よく狙ってね！</p>
     <button id="startBtn">スタート！</button>
     <p class="hint">スマホ：ドラッグで移動、タップ長押しで星を発射<br>PC：←→キーで移動、スペースで発射</p>
@@ -134,7 +134,7 @@
     slimes.push({
       x: 26 + Math.random() * (W - 52),
       y: -22,
-      vx: dir * (30 + Math.random() * 75),
+      vx: dir * (60 + Math.random() * 150),
       vy: 40 + Math.random() * 55,
       r: 13 + Math.random() * 3,
       color: SLIME_COLORS[(Math.random() * SLIME_COLORS.length) | 0]
@@ -144,11 +144,11 @@
     const pts = Math.min(9999, Math.pow(2, gen + 1));
     score += pts; updateHud();
     addFloat(s.x, s.y, '+' + pts, gen >= 4 ? 24 : gen >= 2 ? 19 : 14);
-    const n = 3 + ((Math.random() * 3) | 0); // 3〜5個
+    const n = 5; // 星は5個
     for (let i = 0; i < n; i++) {
       const ang = (-160 + Math.random() * 140) * Math.PI / 180;
       const sp = 130 + Math.random() * 130;
-      scatters.push({x: s.x, y: s.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, gen: gen + 1, life: 1.0});
+      scatters.push({x: s.x, y: s.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, gen: gen + 1});
     }
     if (gen >= 2 && Math.random() < .3) {
       drops.push({x: s.x, y: s.y, vy: 100});
@@ -227,11 +227,7 @@
     for (const s of slimes) drawSlime(s);
     for (const d of drops) { ctx.font = '20px serif'; ctx.fillText('💗', d.x, d.y); }
     for (const sh of shots) { ctx.font = '18px serif'; ctx.fillText('⭐', sh.x, sh.y); }
-    for (const sc of scatters) {
-      ctx.globalAlpha = Math.max(0, Math.min(1, sc.life));
-      ctx.font = '13px serif'; ctx.fillText('⭐', sc.x, sc.y);
-    }
-    ctx.globalAlpha = 1;
+    for (const sc of scatters) { ctx.font = '13px serif'; ctx.fillText('⭐', sc.x, sc.y); }
     const inv = elapsed < invUntil;
     if (!inv || Math.floor(t / 120) % 2 === 0) {
       ctx.font = '36px serif';
@@ -290,8 +286,8 @@
         s.vy = -Math.abs(s.vy) * .9;
         if (Math.abs(s.vy) < 70) {
           s.vy = -(90 + Math.random() * 70);
-          s.vx += (Math.random() * 60 - 30);
-          s.vx = Math.max(-130, Math.min(130, s.vx));
+          s.vx += (Math.random() * 120 - 60);
+          s.vx = Math.max(-260, Math.min(260, s.vx));
         }
       }
     }
@@ -317,11 +313,9 @@
     shots = shots.filter((_, i) => !usedShots.has(i));
     slimes = slimes.filter((_, j) => !hitSlimes.has(j));
 
-    // 飛び散った星（表示1秒）
+    // 飛び散った星
     const aliveSc = [];
     for (const sc of scatters) {
-      sc.life -= dt;
-      if (sc.life <= 0) continue;
       sc.vy += 260 * dt;
       sc.x += sc.vx * dt;
       sc.y += sc.vy * dt;
