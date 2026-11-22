@@ -181,6 +181,7 @@
   function gameOver() {
     state = 'over';
     downScreen.classList.add('hidden');
+    const prevBest = best;
     if (score > best) {
       best = score;
       localStorage.setItem('muu-bakuretsu-best', best);
@@ -188,6 +189,9 @@
       overMsgEl.textContent = '新記録だよ！すごい！🎉';
     } else {
       overMsgEl.textContent = 'おつかれさま！また遊ぼうね💜';
+    }
+    if (prevBest <= 10000 && best > 10000) {
+      overMsgEl.textContent = '🎉 ハードモード解禁！保管庫で選べるようになったよ！';
     }
     finalScoreEl.textContent = score + '点';
     overScreen.classList.remove('hidden');
