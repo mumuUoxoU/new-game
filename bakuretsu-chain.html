@@ -95,13 +95,12 @@
     r: Math.random()*1.6 + .4, p: Math.random()*Math.PI*2
   }));
   const SLIME_COLORS = ['#b18cff','#ff9fd6','#8fe3c0','#9fc4ff','#ffd28f'];
-  const TOTAL_SLIMES = 250;
+  const MAX_SLIMES = 250; // 画面内の敵の上限
 
   let state = 'ready';
   let raf = 0, last = 0, elapsed = 0;
   let score = 0, heartsCollected = 0;
   let timeLeft = 60;
-  let spawned = 0;
   let playerX = W/2;
   const playerY = H - 40, playerR = 11;
   let slimes = [], shots = [], scatters = [], drops = [], floats = [];
@@ -114,7 +113,7 @@
 
   function reset() {
     score = 0; heartsCollected = 0; elapsed = 0;
-    timeLeft = 60; spawned = 0;
+    timeLeft = 60;
     slimes = []; shots = []; scatters = []; drops = []; floats = [];
     spawnTimer = .3; fireTimer = 0; playerX = W/2;
     updateHud();
@@ -127,7 +126,6 @@
     floats.push({x, y, text, life: 1, size: size || 12});
   }
   function spawnSlime() {
-    spawned++;
     const dir = Math.random() < .5 ? -1 : 1;
     slimes.push({
       x: 26 + Math.random() * (W - 52),
@@ -243,11 +241,11 @@
       }
     }
 
-    // 出現（ハードの5倍のスピード、総数250匹まで）
+    // 出現（ハードの5倍のスピード、画面内は最大250体まで）
     if (!overtime()) {
       spawnTimer -= dt;
       const base = Math.max(.5, 1.0 - elapsed * .008);
-      if (spawnTimer <= 0 && spawned < TOTAL_SLIMES) { spawnSlime(); spawnTimer = base / 5; }
+      if (spawnTimer <= 0 && slimes.length < MAX_SLIMES) { spawnSlime(); spawnTimer = base / 5; }
     }
 
     // スライム：重力＋左/右/下で跳ね返る（横・落下はハードの2倍）
