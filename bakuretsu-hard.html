@@ -133,7 +133,7 @@
     const dir = Math.random() < .5 ? -1 : 1;
     slimes.push({
       x: 26 + Math.random() * (W - 52),
-      y: -22,
+      y: -30,
       vx: dir * (60 + Math.random() * 150),
       vy: 40 + Math.random() * 55,
       r: 13 + Math.random() * 3,
@@ -144,16 +144,17 @@
     const pts = Math.min(9999, Math.pow(2, gen + 1));
     score += pts; updateHud();
     addFloat(s.x, s.y, '+' + pts, gen >= 4 ? 24 : gen >= 2 ? 19 : 14);
-    const n = 5; // 星は5個
+    const n = 3 + ((Math.random() * 3) | 0); // 星は3〜5個
     for (let i = 0; i < n; i++) {
       const ang = (-160 + Math.random() * 140) * Math.PI / 180;
       const sp = 130 + Math.random() * 130;
-      scatters.push({x: s.x, y: s.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, gen: gen + 1});
+      scatters.push({x: s.x, y: s.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, gen: gen + 1, t: 0});
     }
     if (gen >= 2 && Math.random() < .3) {
       drops.push({x: s.x, y: s.y, vy: 100});
     }
   }
+  const inScreen = s => (s.y + s.r > 0 && s.y - s.r < H && s.x + s.r > 0 && s.x - s.r < W);
   function shoot() {
     shots.push({x: playerX, y: playerY - 24, vy: -540});
   }
@@ -224,7 +225,7 @@
     ctx.fillStyle = 'rgba(255,255,255,.10)';
     ctx.fillRect(0, GROUND, W, 26);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    for (const s of slimes) drawSlime(s);
+    for (const s of slimes) if (inScreen(s)) drawSlime(s);
     for (const d of drops) { ctx.font = '20px serif'; ctx.fillText('💗', d.x, d.y); }
     for (const sh of shots) { ctx.font = '18px serif'; ctx.fillText('⭐', sh.x, sh.y); }
     for (const sc of scatters) { ctx.font = '13px serif'; ctx.fillText('⭐', sc.x, sc.y); }
@@ -279,7 +280,6 @@
       s.y += s.vy * dt;
       if (s.x < s.r) { s.x = s.r; s.vx = Math.abs(s.vx); }
       if (s.x > W - s.r) { s.x = W - s.r; s.vx = -Math.abs(s.vx); }
-      if (s.y < s.r) { s.y = s.r; s.vy = Math.abs(s.vy); }
       const floorY = GROUND - s.r;
       if (s.y > floorY) {
         s.y = floorY;
@@ -305,6 +305,7 @@
     shots.forEach((sh, i) => {
       slimes.forEach((s, j) => {
         if (hitSlimes.has(j) || usedShots.has(i)) return;
+        if (!inScreen(s)) return;
         if (Math.hypot(sh.x - s.x, sh.y - s.y) < s.r + 9) {
           hitSlimes.add(j); usedShots.add(i); burst(s, 0);
         }
@@ -316,12 +317,14 @@
     // 飛び散った星
     const aliveSc = [];
     for (const sc of scatters) {
+      sc.t += dt; // 飛び散った星は1秒で消える
       sc.vy += 260 * dt;
       sc.x += sc.vx * dt;
       sc.y += sc.vy * dt;
       let consumed = false;
       for (let j = 0; j < slimes.length; j++) {
         const s = slimes[j];
+        if (!inScreen(s)) continue;
         if (Math.hypot(sc.x - s.x, sc.y - s.y) < s.r + 8) {
           burst(s, sc.gen);
           slimes.splice(j, 1);
@@ -333,13 +336,14 @@
       if (elapsed >= invUntil && Math.hypot(sc.x - playerX, sc.y - playerY) < playerR + 7) {
         goDown(); draw(ts); return;
       }
-      if (sc.y < GROUND - 4 && sc.x > -16 && sc.x < W + 16 && sc.y > -30) aliveSc.push(sc);
+      if (sc.t < 1 && sc.y < GROUND - 4 && sc.x > -16 && sc.x < W + 16 && sc.y > -30) aliveSc.push(sc);
     }
     scatters = aliveSc;
 
     // スライム×プレイヤー
     if (elapsed >= invUntil) {
       for (const s of slimes) {
+        if (!inScreen(s)) continue;
         if (Math.hypot(s.x - playerX, s.y - playerY) < s.r + playerR - 4) {
           goDown(); draw(ts); return;
         }
