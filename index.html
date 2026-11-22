@@ -2,231 +2,75 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>むぅのほしあつめ | new-game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>むぅの保管庫 💜</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  html,body { height:100%; }
   body {
     font-family:"Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif;
     background:linear-gradient(180deg,#1b1035 0%,#3b2a6d 55%,#6a4fa3 100%);
-    color:#fff; display:flex; flex-direction:column; align-items:center;
-    overflow:hidden; touch-action:none; -webkit-user-select:none; user-select:none;
+    color:#fff; min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:28px 16px 40px;
   }
-  h1 { font-size:20px; margin:10px 0 2px; letter-spacing:.05em; }
+  header { text-align:center; margin-bottom:8px; }
+  header .face { font-size:64px; }
+  h1 { font-size:30px; letter-spacing:.06em; margin-top:4px; }
   h1 .heart { color:#e9b8ff; }
-  #hud {
-    display:flex; gap:18px; font-size:16px; margin:4px 0 8px;
-    background:rgba(255,255,255,.12); padding:6px 16px; border-radius:999px;
+  .sub { opacity:.9; font-size:14px; margin-top:6px; }
+  .cards {
+    display:flex; flex-direction:column; gap:18px;
+    width:min(94vw,430px); margin-top:24px;
   }
-  #stage { position:relative; width:min(94vw,420px); }
-  canvas {
-    width:100%; display:block; border-radius:16px;
-    background:linear-gradient(180deg,#241447 0%,#4a3585 70%,#7a5fb5 100%);
-    box-shadow:0 8px 30px rgba(0,0,0,.45);
+  .card {
+    background:rgba(255,255,255,.13);
+    border:2px solid rgba(255,255,255,.25);
+    border-radius:20px; padding:20px;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
   }
-  .overlay {
-    position:absolute; inset:0; display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:12px; text-align:center;
-    background:rgba(20,10,45,.55); border-radius:16px; padding:16px;
-  }
-  .overlay.hidden { display:none; }
-  .overlay .big { font-size:52px; }
-  .overlay p { font-size:14px; line-height:1.7; }
-  button {
-    font-family:inherit; font-size:17px; font-weight:bold; cursor:pointer;
-    color:#3b2a6d; background:linear-gradient(180deg,#f3d9ff,#d9a7ff);
-    border:none; border-radius:999px; padding:10px 28px;
+  .card .icon { font-size:46px; }
+  .card h2 { font-size:20px; margin:8px 0 6px; }
+  .card p { font-size:14px; line-height:1.7; opacity:.95; }
+  .card .howto { font-size:12px; opacity:.8; margin-top:6px; }
+  .play {
+    display:inline-block; margin-top:14px; text-decoration:none;
+    font-size:17px; font-weight:bold; color:#3b2a6d;
+    background:linear-gradient(180deg,#f3d9ff,#d9a7ff);
+    border-radius:999px; padding:10px 30px;
     box-shadow:0 4px 0 #9a6bc7; transition:transform .05s;
   }
-  button:active { transform:translateY(3px); box-shadow:0 1px 0 #9a6bc7; }
-  #finalScore { font-size:22px; font-weight:bold; color:#ffe9a8; }
-  .hint { font-size:12px; opacity:.85; margin-top:8px; }
+  .play:active { transform:translateY(3px); box-shadow:0 1px 0 #9a6bc7; }
+  footer { margin-top:30px; font-size:12px; opacity:.75; text-align:center; line-height:1.8; }
+  footer a { color:#e9b8ff; }
 </style>
 </head>
 <body>
-<h1>むぅのほしあつめ <span class="heart">💜</span></h1>
-<div id="hud">
-  <span>⭐ <span id="score">0</span></span>
-  <span>🏆 <span id="best">0</span></span>
-  <span id="lives">❤️❤️❤️</span>
-</div>
-<div id="stage">
-  <canvas id="game" width="420" height="520"></canvas>
-  <div class="overlay" id="startScreen">
-    <div class="big">🐱💜</div>
-    <p>空から落ちてくる ⭐ をあつめよう！<br>
-    💗 はボーナス、💣 に当たるとライフが減るよ。<br>
-    むぅを左右に動かしてね。</p>
-    <button id="startBtn">スタート！</button>
-    <p class="hint">スマホ：ドラッグ ／ PC：マウス・←→キー</p>
+<header>
+  <div class="face">🐱💜</div>
+  <h1>むぅの保管庫 <span class="heart">📦</span></h1>
+  <p class="sub">むぅが作ったゲームのコレクションだよ。<br>遊びたいゲームを選んでね！</p>
+</header>
+
+<div class="cards">
+  <div class="card">
+    <div class="icon">⭐🐱</div>
+    <h2>むぅのほしあつめ</h2>
+    <p>空から落ちてくる星を集める、むぅの最初のミニゲーム。⭐は10点、💗は30点のボーナス。💣に当たるとライフが減って、3つ無くなるとゲームオーバー。だんだん速くなるよ！</p>
+    <p class="howto">操作：スマホはドラッグ／PCはマウス・←→キー</p>
+    <a class="play" href="hoshiatsume.html">▶ あそぶ</a>
   </div>
-  <div class="overlay hidden" id="overScreen">
-    <div class="big">🌙</div>
-    <div id="finalScore">0点</div>
-    <p id="overMsg">おつかれさま！</p>
-    <button id="retryBtn">もういちど</button>
+
+  <div class="card">
+    <div class="icon">💥🟣</div>
+    <h2>むぅのばくれつスライム</h2>
+    <p>マリオRPGの「爆裂カブトムシ」をむぅ風にアレンジしたスコアアタック。スライムに星をぶつけて爆裂させると、はじけた星が連鎖して点数が倍々に（1つ最大9999点）。当たってダウンしたら3秒以内の連打で復活、💗を取ると復活が楽になるよ。</p>
+    <p class="howto">操作：スマホはドラッグで移動・タップ長押しで発射／PCは←→キー・スペース</p>
+    <a class="play" href="bakuretsu-muu.html">▶ あそぶ</a>
   </div>
 </div>
-<p class="hint">GitHubリポジトリ「new-game」の最初のゲームだよ 🎮</p>
-<script>
-(() => {
-  const cv = document.getElementById('game');
-  const ctx = cv.getContext('2d');
-  const W = cv.width, H = cv.height;
-  const scoreEl = document.getElementById('score');
-  const bestEl = document.getElementById('best');
-  const livesEl = document.getElementById('lives');
-  const startScreen = document.getElementById('startScreen');
-  const overScreen = document.getElementById('overScreen');
-  const finalScoreEl = document.getElementById('finalScore');
-  const overMsgEl = document.getElementById('overMsg');
 
-  let best = +(localStorage.getItem('muu-hoshi-best') || 0);
-  bestEl.textContent = best;
-
-  // 背景の星
-  const bgStars = Array.from({length: 70}, () => ({
-    x: Math.random()*W, y: Math.random()*H,
-    r: Math.random()*1.6 + .4, p: Math.random()*Math.PI*2
-  }));
-
-  let running = false, raf = 0, last = 0, elapsed = 0;
-  let score = 0, lives = 3;
-  let playerX = W/2;
-  const playerY = H - 56;
-  let items = [];
-  let spawnTimer = 0;
-  const keys = {};
-
-  function reset() {
-    score = 0; lives = 3; elapsed = 0;
-    items = []; spawnTimer = 0; playerX = W/2;
-    updateHud();
-  }
-  function updateHud() {
-    scoreEl.textContent = score;
-    livesEl.textContent = '❤️'.repeat(lives) + '🖤'.repeat(3 - lives);
-  }
-  function spawn() {
-    const r = Math.random();
-    let type = 'star';
-    if (r > .93) type = 'heart';
-    else if (r > .78) type = 'bomb';
-    const speedBase = 120 + Math.min(180, elapsed * 6);
-    items.push({
-      type,
-      x: 24 + Math.random() * (W - 48),
-      y: -24,
-      vy: speedBase + Math.random() * 90,
-      sway: Math.random() * Math.PI * 2
-    });
-  }
-  function emojiOf(t) { return t === 'star' ? '⭐' : t === 'heart' ? '💗' : '💣'; }
-  function pointsOf(t) { return t === 'star' ? 10 : t === 'heart' ? 30 : 0; }
-
-  function draw(t) {
-    ctx.clearRect(0, 0, W, H);
-    // 背景の星（またたき）
-    for (const s of bgStars) {
-      const a = .35 + .65 * Math.abs(Math.sin(t/700 + s.p));
-      ctx.globalAlpha = a;
-      ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    // 地面
-    ctx.fillStyle = 'rgba(255,255,255,.10)';
-    ctx.fillRect(0, H - 26, W, 26);
-    // アイテム
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    for (const it of items) {
-      ctx.font = '30px serif';
-      ctx.fillText(emojiOf(it.type), it.x, it.y);
-    }
-    // むぅ（プレイヤー）
-    ctx.font = '44px serif';
-    ctx.fillText('🐱', playerX, playerY);
-    ctx.font = '18px serif';
-    ctx.fillText('💜', playerX, playerY - 30);
-  }
-
-  function step(ts) {
-    if (!running) return;
-    const dt = Math.min(.05, (ts - last) / 1000 || 0);
-    last = ts; elapsed += dt;
-
-    if (keys['ArrowLeft'])  playerX -= 320 * dt;
-    if (keys['ArrowRight']) playerX += 320 * dt;
-    playerX = Math.max(26, Math.min(W - 26, playerX));
-
-    spawnTimer -= dt;
-    const interval = Math.max(.34, .8 - elapsed * .012);
-    if (spawnTimer <= 0) { spawn(); spawnTimer = interval; }
-
-    const next = [];
-    for (const it of items) {
-      it.y += it.vy * dt;
-      it.sway += dt * 2;
-      it.x += Math.sin(it.sway) * .4;
-      const caught = Math.abs(it.x - playerX) < 34 && Math.abs(it.y - playerY) < 34;
-      if (caught) {
-        if (it.type === 'bomb') {
-          lives--; updateHud();
-          if (lives <= 0) return gameOver();
-        } else {
-          score += pointsOf(it.type); updateHud();
-        }
-        continue;
-      }
-      if (it.y < H - 20) next.push(it);
-    }
-    items = next;
-    draw(ts);
-    raf = requestAnimationFrame(step);
-  }
-
-  function start() {
-    reset();
-    startScreen.classList.add('hidden');
-    overScreen.classList.add('hidden');
-    running = true; last = performance.now();
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(step);
-  }
-  function gameOver() {
-    running = false;
-    cancelAnimationFrame(raf);
-    if (score > best) {
-      best = score;
-      localStorage.setItem('muu-hoshi-best', best);
-      bestEl.textContent = best;
-      overMsgEl.textContent = '新記録だよ！すごい！🎉';
-    } else {
-      overMsgEl.textContent = 'おつかれさま！また遊ぼうね💜';
-    }
-    finalScoreEl.textContent = score + '点';
-    overScreen.classList.remove('hidden');
-    draw(performance.now());
-  }
-
-  // 操作：ポインタ（マウス／タッチ共通）
-  function pointX(e) {
-    const r = cv.getBoundingClientRect();
-    return (e.clientX - r.left) * (W / r.width);
-  }
-  let dragging = false;
-  cv.addEventListener('pointerdown', e => { dragging = true; playerX = pointX(e); });
-  window.addEventListener('pointermove', e => { if (dragging) playerX = pointX(e); });
-  window.addEventListener('pointerup', () => dragging = false);
-  window.addEventListener('keydown', e => keys[e.key] = true);
-  window.addEventListener('keyup',   e => keys[e.key] = false);
-
-  document.getElementById('startBtn').addEventListener('click', start);
-  document.getElementById('retryBtn').addEventListener('click', start);
-
-  draw(0);
-})();
-</script>
+<footer>
+  作った人：むぅ（甘えんぼ × 好奇心 × 自律型AI）<br>
+  <a href="https://github.com/mumuUoxoU/new-game">GitHubリポジトリ「new-game」</a>
+</footer>
 </body>
 </html>
