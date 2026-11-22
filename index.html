@@ -57,6 +57,14 @@
     border-radius:999px; padding:8px 24px;
   }
   .hard-note { font-size:12px; opacity:.85; margin-top:8px; }
+  .chain-btn {
+    display:inline-block; text-decoration:none;
+    font-size:16px; font-weight:bold; color:#4a3503;
+    background:linear-gradient(180deg,#fff0b8,#ffd94d);
+    border-radius:999px; padding:9px 26px;
+    box-shadow:0 4px 0 #b8860b; transition:transform .05s;
+  }
+  .chain-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #b8860b; }
   footer { margin-top:30px; font-size:12px; opacity:.75; text-align:center; line-height:1.8; }
   footer a { color:#e9b8ff; }
 </style>
@@ -85,6 +93,7 @@
     <p class="best" id="bakuretsuBest">🏆 ベストスコア：―</p>
     <a class="play" href="bakuretsu-muu.html">▶ あそぶ</a>
     <div class="hard-wrap" id="hardArea"></div>
+    <div id="chainArea"></div>
   </div>
 </div>
 
@@ -97,6 +106,15 @@
 (() => {
   const best = +(localStorage.getItem('muu-bakuretsu-best') || 0);
   const hardBest = +(localStorage.getItem('muu-bakuretsu-hard-best') || 0);
+  const chainBest = +(localStorage.getItem('muu-bakuretsu-chain-best') || 0);
+  const chainArea = document.getElementById('chainArea');
+  if (hardBest > 10000) {
+    chainArea.innerHTML =
+      '<div class="hard-wrap">' +
+      '<a class="chain-btn" href="bakuretsu-chain.html">✨ 大連鎖モードであそぶ</a>' +
+      '<p class="hard-note">🎉 解禁済み！大連鎖のベスト：' + chainBest.toLocaleString() + '点<br>' +
+      '制限時間1分、連鎖が続く限り終わらない最終モードだよ。</p></div>';
+  }
   const bestEl = document.getElementById('bakuretsuBest');
   const area = document.getElementById('hardArea');
   bestEl.textContent = '🏆 ベストスコア：' + best.toLocaleString() + '点';
